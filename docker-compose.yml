@@ -67,14 +67,7 @@ services:
              AWS_SECRET_ACCESS_KEY: minio123
              AWS_URI: http://s3.docker.mender.io:9000
         depends_on:
-            - mender-mongo-deployments
-
-    mender-mongo-deployments:
-        image: mongo:latest
-        networks:
-            mender:
-                aliases:
-                    - mongo-deployments
+            - mongo-common
 
     #
     # mender-gui
@@ -126,14 +119,7 @@ services:
         networks:
             - mender
         depends_on:
-            - mender-mongo-device-auth
-
-    mender-mongo-device-auth:
-        image: mongo:latest
-        networks:
-            mender:
-                aliases:
-                    - mongo-device-auth
+            - mongo-common
 
     #
     # mender-device-adm
@@ -146,14 +132,7 @@ services:
         networks:
             - mender
         depends_on:
-            - mender-mongo-device-adm
-
-    mender-mongo-device-adm:
-        image: mongo:latest
-        networks:
-            mender:
-                aliases:
-                    - mongo-device-adm
+            - mongo-common
 
     #
     # mender-inventory
@@ -166,14 +145,7 @@ services:
         networks:
             - mender
         depends_on:
-            - mender-mongo-inventory
-
-    mender-mongo-inventory:
-        image: mongo:latest
-        networks:
-            mender:
-                aliases:
-                    - mongo-inventory
+            - mongo-common
 
     #
     # mender-useradm
@@ -186,14 +158,27 @@ services:
         networks:
             - mender
         depends_on:
-            - mender-mongo-useradm
+            - mongo-common
 
-    mender-mongo-useradm:
+    #
+    # single mongo instance for all services, extend as required
+    # during deployment
+    #
+    mongo-common:
         image: mongo:latest
         networks:
             mender:
                 aliases:
+                    - mongo-deployments
+                    - mongo-device-adm
+                    - mongo-device-auth
+                    - mongo-inventory
                     - mongo-useradm
+                    - mender-mongo-deployments
+                    - mender-mongo-device-adm
+                    - mender-mongo-device-auth
+                    - mender-mongo-inventory
+                    - mender-mongo-useradm
 
 networks:
     mender:
