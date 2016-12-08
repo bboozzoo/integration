@@ -1,0 +1,10 @@
+version: '2'
+services:
+
+    #
+    # provide AWS S3 storage configuration for mender-deployments
+    #
+    mender-deployments:
+        environment:
+            AWS_ACCESS_KEY_ID: <your-aws-access-key-id>
+            AWS_SECRET_ACCESS_KEY: <your-aws-secret-access-key>

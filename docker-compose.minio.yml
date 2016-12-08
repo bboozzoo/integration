@@ -1,0 +1,30 @@
+version: '2'
+services:
+
+    #
+    # minio is a S3 like storage backend that can be deployed locally
+    #
+    minio:
+        image: minio/minio:RELEASE.2016-10-07T01-16-39Z
+        ports:
+            - "9000:9000"
+        networks:
+            mender:
+                aliases:
+                    # mender-artifact-storage.localhost must be mapped to 127.0.0.1
+                    # running the 'up' script (found in this dir.) will add the required entry to /etc/hosts
+                    - mender-artifact-storage.localhost
+                    - mender-artifact-storage.s3.docker.mender.io
+                    - s3.docker.mender.io
+        environment:
+            MINIO_ACCESS_KEY: minio
+            MINIO_SECRET_KEY: minio123
+
+    #
+    # override storage settings of mender-deployments to use minio
+    #
+    mender-deployments:
+        environment:
+             AWS_ACCESS_KEY_ID: minio
+             AWS_SECRET_ACCESS_KEY: minio123
+             AWS_URI: http://s3.docker.mender.io:9000
