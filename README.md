@@ -39,6 +39,150 @@ The integration environment brings together the following services:
 - [Minio](https://www.minio.io/) object storage
 - Storage service proxy based on [OpenResty](https://openresty.org/en/)
 
+## How to use in production
+
+A provided `docker-compose.yml` file will provision the following set of
+services:
+
+```
+        |
+        |                                            +-------------------------+
+        |                                            |                         |
+        |                                       +--->|  Device Authentication  |
+        |                                       |    |  (mender-device-auth)   |
+        |                                       |    +-------------------------+
+        |        +-----------------------+      |    |                         |
+   port |        |                       |      +--->|  Device Admission       |
+   8080 | <----> |  API Gateway          |      |    |  (mender-device-adm)    |
+        |        |  (mender-api-gateway) |<-----+    +-------------------------+
+        |        +-----------------------+      |    |                         |
+        |                                       +--->|  Inventory              |
+        |                                       |    |  (mender-inventory)     |
+        |                                       |    +-------------------------+
+        |                                       |    |                         |
+        |                                       +--->|  User Administration    |
+        |                                       |    |  (mender-useradm)       |
+        |                                       |    +-------------------------+
+        |                                       +--->|                         |
+        |                                            |  Deployments            |
+        |              +---------------------------->|  (mender-deployments)   |
+        |              |                             +-------------------------+
+        |              |
+        |              |
+        |              v
+        |        +------------------+                 +---------+
+   port |        |                  |                 |         |
+   9000 | <----> |  Storage Proxy   |<--------------->| Minio   |
+        |        |  (storage-proxy) |                 | (minio) |
+        |        +------------------+                 +---------+
+        |
+```
+
+It is customary to provide deployment specific overrides in a separate compose
+file. This can either be `docker-compose.override.yml` file (detected and
+included automatically by `docker-compose` command) or a separate file. If a
+separate file is used, it needs to be explicitly included in command line when
+running `docker-compose` like this:
+
+```
+docker-compose -f docker-compose.yml -f my-other-file.yml up
+```
+
+Mender artifacts file are served from storage backend provided by Minio object
+storage in the reference setup.
+
+### API Gateway certificate
+
+API Gateway certificate needs to be mounted into the gateway's container. This
+can be achieved using a compose file with the following entry:
+
+```
+    mender-api-gateway:
+        volumes:
+            - ./ssl/mender-api-gateway/cert.pem:/var/www/mendersoftware/cert/cert.pem
+            - ./ssl/mender-api-gateway/key.pem:/var/www/mendersoftware/cert/key.pem
+
+```
+
+Where certificate and key paths need to be replaced with paths to your
+certificate and key files.
+
+### Storage Proxy
+
+Storage proxy is responsible for wrapping Minio object storage API with HTTPS
+and provides knobs for implementing bandwidth and connection throttling.
+
+The proxy is implemented as a nginx service (based on OpenResty image), with
+configuration provided in `storage-proxy/nginx.conf` file.
+
+#### Storage Proxy certificate
+
+Storage proxy certificate needs to be mounted into the container. This can be
+implemented using a `docker-compose` file with the following entry:
+
+```
+    storage-proxy:
+        volumes:
+            - ./ssl/storage-proxy/s3.docker.mender.io.crt:/var/www/storage-proxy/cert/cert.crt
+            - ./ssl/storage-proxy/s3.docker.mender.io.key:/var/www/storage-proxy/cert/key.pem
+```
+
+Replace path to demo certificate and key with paths to your certificate and key.
+
+Deployments service communicates with Minio object storage via storage proxy.
+For this reason, `mender-deployments` service must be provisioned with a
+certificate of a storage proxy for host verification purpose. This can be
+implemented by adding the following entry to compose file:
+
+```
+    mender-deployments:
+        volumes:
+            - ./ssl/storage-proxy/s3.docker.mender.io.crt:/etc/ssl/certs/s3.docker.mender.io.crt
+        environment:
+            - STORAGE_BACKEND_CERT=/etc/ssl/certs/s3.docker.mender.io.crt
+```
+
+`STORAGE_BACKEND_CERT` defines a path to the certificate of storage proxy within
+the container's filesystem. Deployments service will automatically load the
+certificate into its trust store.
+
+#### Bandwidth and connection limiting
+
+`storage-proxy` container is aware of 2 environment variables:
+
+* `MAX_CONNECTIONS` - limits the number of concurrent GET requests. Integer,
+  defaults to 100.
+
+* `DOWNLOAD_SPEED` - limits the download speed of proxy response. String,
+  defaults to `1m` (1MByte/s). Detailed format description is provided in nginx
+  documentation
+  of
+  [limit_rate](https://nginx.org/en/docs/http/ngx_http_core_module.html#limit_rate) variable
+
+These options can be adjusted using a separate compose file with the following
+entry (example limiting download speed to 512kB/s, max 5 concurrent transfers):
+
+```
+    storage-proxy:
+        environment:
+            MAX_CONNECTIONS: 5
+            DOWNLOAD_SPEED: 512k
+```
+
+### S3 storage backend
+
+It is possible to use S3 as a storage backend in place of Minio object storage.
+This can be achieved using a separate compose file with the following entry:
+
+```
+    mender-deployments:
+        environment:
+            AWS_ACCESS_KEY_ID: <your-aws-access-key-id>
+            AWS_SECRET_ACCESS_KEY: <your-aws-secret-access-key>
+            AWS_URI: https://s3.amazonaws.com
+```
+
+
 ## Integrating a new service
 
 Adding a new service to the setup involves:
