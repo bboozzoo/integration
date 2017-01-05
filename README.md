@@ -107,7 +107,13 @@ can be achieved using a compose file with the following entry:
 Where certificate and key paths need to be replaced with paths to your
 certificate and key files.
 
-### Storage Proxy
+### Artifact Storage
+
+Mender artifacts are kept by default in S3-like object store provided by Minio.
+It is possible to use the actual Amazon S3 service for storage as well. See
+section [S3 storage backend](#s3-storage-backend) for details.
+
+#### Storage Proxy
 
 Storage proxy is responsible for wrapping Minio object storage API with HTTPS
 and provides knobs for implementing bandwidth and connection throttling.
@@ -115,7 +121,7 @@ and provides knobs for implementing bandwidth and connection throttling.
 The proxy is implemented as a nginx service (based on OpenResty image), with
 configuration provided in `storage-proxy/nginx.conf` file.
 
-#### Storage Proxy certificate
+##### Storage Proxy certificate
 
 Storage proxy certificate needs to be mounted into the container. This can be
 implemented using a `docker-compose` file with the following entry:
@@ -146,7 +152,7 @@ implemented by adding the following entry to compose file:
 the container's filesystem. Deployments service will automatically load the
 certificate into its trust store.
 
-#### Bandwidth and connection limiting
+##### Bandwidth and connection limiting
 
 `storage-proxy` container is aware of 2 environment variables:
 
@@ -169,7 +175,7 @@ entry (example limiting download speed to 512kB/s, max 5 concurrent transfers):
             DOWNLOAD_SPEED: 512k
 ```
 
-### S3 storage backend
+#### S3 storage backend
 
 It is possible to use S3 as a storage backend in place of Minio object storage.
 This can be achieved using a separate compose file with the following entry:
