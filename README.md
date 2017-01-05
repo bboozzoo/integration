@@ -91,6 +91,10 @@ docker-compose -f docker-compose.yml -f my-other-file.yml up
 Mender artifacts file are served from storage backend provided by Minio object
 storage in the reference setup.
 
+A demo setup uses `docker-compose.demo.yml` overlay file to override different
+aspects of configuration and can be used as an example when deploying to
+production.
+
 ### API Gateway certificate
 
 API Gateway certificate needs to be mounted into the gateway's container. This
