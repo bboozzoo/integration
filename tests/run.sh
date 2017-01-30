@@ -34,8 +34,8 @@ if [[ ! -f broken_update.ext4 ]]; then
 fi
 
 if [ $# -eq 0 ]; then
-    py.test --maxfail=1 -s --tb=short --verbose --junitxml=results.xml --runfast --runslow
+    py.test --maxfail=1 -s --tb=short --verbose --junitxml=results.xml --runfast --runslow tests/test_deployment_aborting.py::TestDeploymentAborting::test_deployment_abortion_installing
     exit $?
 fi
 
-py.test --maxfail=1 -s --tb=short --verbose --junitxml=results.xml "$@"
+#py.test --maxfail=1 -s --tb=short --verbose --junitxml=results.xml "$@"
