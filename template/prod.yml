@@ -153,11 +153,9 @@ services:
     mender-elasticsearch:
         volumes:
             - mender-elasticsearch-db:/usr/share/elasticsearch/data:rw
-    mender-dynomite:
+    mender-redis:
         volumes:
-            - mender-dynomite-db:/var/lib/redis:rw
-            - ./conductor/dynomite/redis.conf:/etc/redis/redis.conf
-            - ./conductor/dynomite/entrypoint.sh:/dynomite/entrypoint.sh
+            - mender-redis-db:/data:rw
         entrypoint: /dynomite/entrypoint.sh
 
 volumes:
@@ -191,11 +189,11 @@ volumes:
       external:
           # use external volume created manually
           name: mender-deviceadm-db
-    # dynomite database
-    mender-dynomite-db:
+    # redis database
+    mender-redis-db:
       external:
           # use external volume created manually
-          name: mender-dynomite-db
+          name: mender-redis-db
     # elasticsearch database
     mender-elasticsearch-db:
       external:

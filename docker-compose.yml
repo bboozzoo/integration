@@ -133,7 +133,7 @@ services:
         image: mendersoftware/conductor:1.7.7
         depends_on:
             - mender-elasticsearch
-            - mender-dynomite
+            - mender-redis
         networks:
             - mender
 
@@ -142,8 +142,8 @@ services:
         networks:
             - mender
 
-    mender-dynomite:
-        image: mendersoftware/dynomite:stable
+    mender-redis:
+        image: redis
         networks:
             - mender
 
